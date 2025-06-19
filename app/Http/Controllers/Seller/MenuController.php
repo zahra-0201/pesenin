@@ -23,7 +23,10 @@ class MenuController extends Controller
 
         // Cek apakah user sudah login dan punya tenant (kantin)
         if ($user && $user->tenant) {
-            $menus = $user->tenant->menus; // Jika punya, ambil semua menu dari tenant tersebut
+            // Jika punya, ambil semua menu dari tenant tersebut
+            // Pastikan mengambil semua menu, termasuk yang soft-deleted jika diperlukan,
+            // tapi secara default Eloquent hanya mengambil yang tidak soft-deleted.
+            $menus = $user->tenant->menus;
         }
 
         return view('seller.index', compact('menus')); // Arahkan ke view seller.index.blade.php
@@ -140,7 +143,7 @@ class MenuController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     * Menghapus menu dari database.
+     * Menghapus menu dari database secara permanen.
      */
     public function destroy(string $id)
     {
@@ -154,7 +157,8 @@ class MenuController extends Controller
             Storage::disk('public')->delete($menu->image);
         }
         
-        $menu->delete(); // Hapus data menu dari database
+        // --- UBAH DARI $menu->delete() MENJADI $menu->forceDelete() UNTUK HAPUS PERMANEN ---
+        $menu->forceDelete(); // Menghapus data menu dari database secara permanen
 
         return redirect()->route('seller.menus.index')->with('success', 'Menu berhasil dihapus!');
     }
