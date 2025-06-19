@@ -1,34 +1,31 @@
-    <?php
+<?php namespace App\Models;
 
-    namespace App\Models;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\Order;
+use App\Models\Menu;
 
-    use Illuminate\Database\Eloquent\Factories\HasFactory;
-    use Illuminate\Database\Eloquent\Model;
-    use App\Models\Order;
-    use App\Models\Menu;
+class OrderItem extends Model
+{
+    use HasFactory;
 
-    class OrderItem extends Model
+    protected $fillable = [
+        'order_id',
+        'menu_id',
+        'quantity',
+        'unit_price',
+        'notes',
+    ];
+
+    // Relasi ke Order (pesanan induk)
+    public function order()
     {
-        use HasFactory;
-
-        protected $fillable = [
-            'order_id',
-            'menu_id',
-            'quantity',
-            'unit_price',
-            'notes',
-        ];
-
-        // Relasi ke Order (pesanan induk)
-        public function order()
-        {
-            return $this->belongsTo(Order::class);
-        }
-
-        // Relasi ke Menu (item menu yang dipesan)
-        public function menu()
-        {
-            return $this->belongsTo(Menu::class);
-        }
+        return $this->belongsTo(Order::class);
     }
-    
+
+    // Relasi ke Menu (item menu yang dipesan)
+    public function menu()
+    {
+        return $this->belongsTo(Menu::class);
+    }
+}
