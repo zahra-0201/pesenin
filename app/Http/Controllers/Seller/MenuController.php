@@ -26,7 +26,7 @@ class MenuController extends Controller
             $menus = $user->tenant->menus; // Jika punya, ambil semua menu dari tenant tersebut
         }
 
-        return view('seller.index', compact('menus')); // Arahkan ke view index.blade.php
+        return view('seller.index', compact('menus')); // Arahkan ke view seller.index.blade.php
     }
 
     /**
@@ -57,7 +57,6 @@ class MenuController extends Controller
         $tenant = Auth::user()->tenant;
         if (!$tenant) {
             // Jika user belum punya tenant, buatkan dulu secara otomatis
-            // Di proyek nyata, mungkin ada form terpisah untuk pendaftaran tenant
             $tenant = Tenant::create([
                 'user_id' => Auth::id(),
                 'name' => Auth::user()->name . "'s Kantin", // Nama kantin default
@@ -68,8 +67,6 @@ class MenuController extends Controller
         // Jika ada gambar yang diupload, simpan ke storage
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('menu_images', 'public');
-            // 'menu_images' adalah folder di dalam storage/app/public
-            // 'public' adalah disk storage yang mengarah ke storage/app/public
         }
 
         // Buat menu baru di database menggunakan Model Menu
@@ -79,7 +76,7 @@ class MenuController extends Controller
             'description' => $validatedData['description'],
             'price' => $validatedData['price'],
             'stock' => $validatedData['stock'],
-            'image' => $imagePath, // Simpan path gambar
+            'image' => $imagePath,
         ]);
 
         // Redirect kembali ke halaman daftar menu penjual dengan pesan sukses
@@ -87,38 +84,78 @@ class MenuController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     * Menampilkan detail satu menu. (Belum diimplementasikan sepenuhnya)
-     */
-    public function show(string $id)
-    {
-        // Akan diimplementasikan nanti
-    }
-
-    /**
      * Show the form for editing the specified resource.
-     * Menampilkan form untuk mengedit menu. (Belum diimplementasikan sepenuhnya)
+     * Menampilkan form untuk mengedit menu.
      */
     public function edit(string $id)
     {
-        // Akan diimplementasikan nanti
+        // Ambil menu berdasarkan ID, dan pastikan itu milik tenant dari user yang sedang login
+        $menu = Menu::where('id', $id)->whereHas('tenant.user', function($query) {
+            $query->where('id', Auth::id());
+        })->firstOrFail(); // firstOrFail() akan memunculkan 404 jika tidak ditemukan/tidak berhak
+
+        return view('seller.edit', compact('menu')); // Kirim data menu ke view seller.edit.blade.php
     }
 
     /**
      * Update the specified resource in storage.
-     * Menyimpan perubahan data menu yang diedit. (Belum diimplementasikan sepenuhnya)
+     * Menyimpan perubahan data menu yang diedit.
      */
     public function update(Request $request, string $id)
     {
-        // Akan diimplementasikan nanti
+        // Temukan menu yang akan diupdate, pastikan milik user yang login
+        $menu = Menu::where('id', $id)->whereHas('tenant.user', function($query) {
+            $query->where('id', Auth::id());
+        })->firstOrFail();
+
+        // Validasi data yang masuk dari form edit
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+            'description' => 'nullable',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Gambar opsional saat update
+        ]);
+
+        $imagePath = $menu->image; // Default: pertahankan gambar lama
+        if ($request->hasFile('image')) {
+            // Hapus gambar lama jika ada dan ada gambar baru diupload
+            if ($menu->image) {
+                Storage::disk('public')->delete($menu->image);
+            }
+            $imagePath = $request->file('image')->store('menu_images', 'public');
+        }
+
+        // Update data menu di database
+        $menu->update([
+            'name' => $validatedData['name'],
+            'description' => $validatedData['description'],
+            'price' => $validatedData['price'],
+            'stock' => $validatedData['stock'],
+            'image' => $imagePath,
+        ]);
+
+        return redirect()->route('seller.menus.index')->with('success', 'Menu berhasil diperbarui!');
     }
 
     /**
      * Remove the specified resource from storage.
-     * Menghapus menu dari database. (Belum diimplementasikan sepenuhnya)
+     * Menghapus menu dari database.
      */
     public function destroy(string $id)
     {
-        // Akan diimplementasikan nanti
+        // Temukan menu yang akan dihapus, pastikan milik user yang login
+        $menu = Menu::where('id', $id)->whereHas('tenant.user', function($query) {
+            $query->where('id', Auth::id());
+        })->firstOrFail();
+
+        // Hapus gambar terkait dari storage jika ada
+        if ($menu->image) {
+            Storage::disk('public')->delete($menu->image);
+        }
+        
+        $menu->delete(); // Hapus data menu dari database
+
+        return redirect()->route('seller.menus.index')->with('success', 'Menu berhasil dihapus!');
     }
 }

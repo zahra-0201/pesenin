@@ -56,7 +56,7 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @if ($menu->image)
-                                                    {{-- Gunakan asset('storage/' . $menu->image) untuk mengakses gambar yang diupload --}}
+                                                    {{-- Gunakan asset('storage/' . $menu->image) untuk mengakses gambar yang diunggah --}}
                                                     <img src="{{ asset('storage/' . $menu->image) }}" alt="{{ $menu->name }}" class="h-16 w-16 object-cover rounded-md">
                                                 @else
                                                     <span class="text-gray-400">Tidak ada gambar</span>
@@ -66,18 +66,25 @@
                                                 {{ $menu->name }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ Str::limit($menu->description, 50) }} {{-- Memotong deskripsi jika terlalu panjang --}}
+                                                {{ Str::limit($menu->description, 50) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                Rp{{ number_format($menu->price, 0, ',', '.') }}
+                                                {{-- Format harga menjadi 2 angka desimal dengan koma sebagai pemisah desimal --}}
+                                                Rp{{ number_format($menu->price, 2, ',', '.') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $menu->stock }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {{-- Tombol Edit dan Hapus akan ditambahkan di sini nanti --}}
-                                                <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>
-                                                <a href="#" class="text-red-600 hover:text-red-900">Hapus</a>
+                                                {{-- Tombol Edit: Mengarahkan ke halaman edit menu spesifik --}}
+                                                <a href="{{ route('seller.menus.edit', $menu->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-2">{{ __('Edit') }}</a>
+                                                
+                                                {{-- Tombol Hapus: Menggunakan form dengan metode DELETE --}}
+                                                <form action="{{ route('seller.menus.destroy', $menu->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus menu ini?');">
+                                                    @csrf {{-- Token CSRF untuk keamanan --}}
+                                                    @method('DELETE') {{-- Memberitahu Laravel bahwa ini adalah permintaan DELETE --}}
+                                                    <button type="submit" class="text-red-600 hover:text-red-900">{{ __('Hapus') }}</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach
